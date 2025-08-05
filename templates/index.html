@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Sentiment Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .input-section {
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+        }
+
+        .input-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .ticker-input {
+            padding: 15px 20px;
+            font-size: 1.2rem;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            width: 200px;
+            text-align: center;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+
+        .ticker-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .analyze-btn {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+            padding: 40px;
+        }
+
+        .correlation-result {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .correlation-score {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .correlation-text {
+            font-size: 1.3rem;
+            color: #666;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 30px 0;
+        }
+
+        .data-info {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin-top: 20px;
+        }
+
+        .error {
+            display: none;
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            margin: 20px 40px;
+            border-radius: 10px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .positive { color: #28a745; }
+        .negative { color: #dc3545; }
+        .neutral { color: #6c757d; }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .input-group { flex-direction: column; }
+            .ticker-input { width: 100%; max-width: 300px; }
+            .container { margin: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Stock Sentiment Analysis</h1>
+            <p>Analyze correlation between Reddit sentiment and stock price movement</p>
+        </div>
+
+        <div class="input-section">
+            <div class="input-group">
+                <input type="text" id="tickerInput" class="ticker-input" placeholder="Enter Stock Ticker" maxlength="10">
+                <button id="analyzeBtn" class="analyze-btn">Analyze</button>
+            </div>
+            <p style="color: #666; margin-top: 10px;">
+                Enter a stock ticker (e.g., AAPL, TSLA, MSFT) to analyze sentiment correlation
+            </p>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Analyzing sentiment and stock data...</p>
+            <p style="color: #666; margin-top: 10px;">This may take up to 30 seconds</p>
+        </div>
+
+        <div id="error" class="error"></div>
+
+        <div id="results" class="results">
+            <div class="correlation-result">
+                <div id="correlationScore" class="correlation-score"></div>
+                <div id="correlationText" class="correlation-text"></div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="correlationChart"></canvas>
+            </div>
+
+            <div id="dataInfo" class="data-info"></div>
+        </div>
+    </div>
+
+    <script>
+        let chart = null;
+
+        document.getElementById('analyzeBtn').addEventListener('click', analyzeStock);
+        document.getElementById('tickerInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyzeStock();
+            }
+        });
+
+        async function analyzeStock() {
+            const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
+            
+            if (!ticker) {
+                showError('Please enter a stock ticker');
+                return;
+            }
+
+            // Show loading state
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('analyzeBtn').disabled = true;
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ticker: ticker })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Analysis failed');
+                }
+
+                displayResults(data);
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+
+        function displayResults(data) {
+            // Show correlation result
+            const correlationScore = document.getElementById('correlationScore');
+            const correlationText = document.getElementById('correlationText');
+            
+            correlationScore.textContent = `Correlation: ${data.correlation}`;
+            correlationText.textContent = data.correlation_text;
+            
+            // Color code the correlation
+            correlationScore.className = 'correlation-score';
+            if (data.correlation > 0.1) {
+                correlationScore.classList.add('positive');
+            } else if (data.correlation < -0.1) {
+                correlationScore.classList.add('negative');
+            } else {
+                correlationScore.classList.add('neutral');
+            }
+
+            // Display data info
+            document.getElementById('dataInfo').innerHTML = `
+                Based on ${data.posts_analyzed} Reddit posts from r/stocks and r/investing<br>
+                Analysis period: Last 30 days (${data.data_points} data points)
+            `;
+
+            // Create chart
+            createChart(data.chart_data);
+
+            // Show results
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function createChart(chartData) {
+            const ctx = document.getElementById('correlationChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (chart) {
+                chart.destroy();
+            }
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.dates,
+                    datasets: [
+                        {
+                            label: 'Sentiment Score',
+                            data: chartData.sentiment,
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            yAxisID: 'y',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Price Change (%)',
+                            data: chartData.price_change,
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            yAxisID: 'y1',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Sentiment vs Stock Price Movement',
+                            font: { size: 16 }
+                        },
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Sentiment Score',
+                                color: '#e74c3c'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Price Change (%)',
+                                color: '#3498db'
+                            },
+                            grid: {
+                                drawOnChartArea: true,
+                            },
+                        },
+                    }
+                }
+            });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
