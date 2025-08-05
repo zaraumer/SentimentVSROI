@@ -1,0 +1,8 @@
+flask
+yfinance
+praw
+pandas
+numpy
+nltk
+scipy
+python-dotenv
