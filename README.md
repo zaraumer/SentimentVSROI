@@ -1,160 +1,125 @@
-# Stock Sentiment to ROI Tool - MVP
+# Stock Sentiment vs. ROI Tool
 
-A Flask web application that analyzes the correlation between Reddit sentiment and stock price movements over the last 30 days.
+A Flask web application that compares Reddit sentiment with a stock's price movement over the past 30 days. Given a stock ticker, the app collects Reddit discussions, analyzes sentiment using VADER, retrieves historical price data from Yahoo Finance, and calculates the correlation between the two.
 
-## Features
+## Tech Stack
 
-- **Stock Analysis**: Enter any stock ticker to analyze sentiment correlation
-- **Reddit Integration**: Analyzes posts from r/stocks and r/investing
-- **Sentiment Analysis**: Uses VADER sentiment analyzer for natural language processing
-- **Correlation Calculation**: Computes Pearson correlation between sentiment and price changes
-- **Interactive Visualization**: Chart.js powered charts showing sentiment vs price movement
-- **Real-time Analysis**: Processes data in memory for fast results
+- Python
+- Flask
+- VADER (NLTK)
+- Chart.js
+- yfinance
+- Reddit API
 
-## Setup Instructions
+## Running the Project
 
-### 1. Install Dependencies
+Clone the repository and install the dependencies.
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Reddit API Setup (Required)
-You need to create a Reddit application to access the Reddit API:
+### Reddit API Setup
 
-1. Go to https://www.reddit.com/prefs/apps
-2. Click "Create App" or "Create Another App"
-3. Choose "script" as the app type
-4. Note down your `client_id` and `client_secret`
+Create a Reddit application:
 
-### 3. Set Environment Variables
-Set the following environment variables with your Reddit API credentials:
+1. Visit https://www.reddit.com/prefs/apps
+2. Click **Create App**
+3. Select **script**
+4. Copy your `client_id` and `client_secret`
 
-**Windows (PowerShell):**
+Set the environment variables.
+
+**PowerShell**
+
 ```powershell
-$env:REDDIT_CLIENT_ID="your_client_id_here"
-$env:REDDIT_CLIENT_SECRET="your_client_secret_here"
+$env:REDDIT_CLIENT_ID="your_client_id"
+$env:REDDIT_CLIENT_SECRET="your_client_secret"
 ```
 
-**Windows (Command Prompt):**
+**Command Prompt**
+
 ```cmd
-set REDDIT_CLIENT_ID=your_client_id_here
-set REDDIT_CLIENT_SECRET=your_client_secret_here
+set REDDIT_CLIENT_ID=your_client_id
+set REDDIT_CLIENT_SECRET=your_client_secret
 ```
 
-**Linux/Mac:**
+**Linux / macOS**
+
 ```bash
-export REDDIT_CLIENT_ID="your_client_id_here"
-export REDDIT_CLIENT_SECRET="your_client_secret_here"
+export REDDIT_CLIENT_ID="your_client_id"
+export REDDIT_CLIENT_SECRET="your_client_secret"
 ```
 
-### 4. Run the Application
+Start the application.
+
 ```bash
 python app.py
 ```
 
-The application will be available at `http://localhost:5000`
-
-## How to Use
-
-1. **Enter Stock Ticker**: Type any valid stock ticker (e.g., AAPL, TSLA, MSFT)
-2. **Click Analyze**: The app will fetch Reddit posts and stock data
-3. **View Results**: See the correlation score and interactive chart
-4. **Interpret Results**: 
-   - Strong correlation: |r| ≥ 0.7
-   - Moderate correlation: 0.3 ≤ |r| < 0.7
-   - Weak correlation: 0.1 ≤ |r| < 0.3
-   - No correlation: |r| < 0.1
-
-## Technical Details
-
-### Data Sources
-- **Stock Data**: Yahoo Finance API (via yfinance)
-- **Sentiment Data**: Reddit API (r/stocks and r/investing subreddits)
-
-### Analysis Process
-1. Validates stock ticker exists
-2. Fetches 30 days of stock price data
-3. Searches Reddit for posts mentioning the ticker
-4. Analyzes sentiment using VADER (compound scores -1 to +1)
-5. Calculates daily average sentiment scores
-6. Computes Pearson correlation coefficient
-7. Displays results with interactive visualization
-
-### Requirements
-- Minimum 20 Reddit posts required for analysis
-- 30-day analysis window
-- At least 5 overlapping data points for correlation
-
-## Error Handling
-
-The app handles various error scenarios:
-- Invalid or non-existent stock tickers
-- Insufficient Reddit data (< 20 posts)
-- API rate limiting
-- Network connectivity issues
-- Data processing errors
-
-## Limitations (MVP)
-
-- Reddit data only (no Twitter, news, etc.)
-- 30-day analysis period only
-- No user accounts or data persistence
-- Single stock analysis at a time
-- No real-time updates
-- Basic mobile optimization
-
-## Future Enhancements
-
-- Multiple data sources (Twitter, news articles)
-- Historical analysis beyond 30 days
-- User authentication and saved analyses
-- Portfolio-level analysis
-- Real-time sentiment tracking
-- Advanced ML models
-- Mobile app
-
-## Architecture
+Open:
 
 ```
-Frontend: HTML/CSS/JavaScript + Chart.js
-Backend: Python Flask
-APIs: Reddit API + Yahoo Finance
-NLP: VADER Sentiment Analysis (NLTK)
-Database: None (in-memory processing)
+http://localhost:5000
 ```
 
-## Performance
+## How It Works
 
-- Analysis typically completes in 10-30 seconds
-- Designed for 1-5 concurrent users
-- Memory-efficient processing
-- No database overhead
+1. Enter a stock ticker.
+2. The app downloads the last 30 days of stock prices.
+3. Reddit posts mentioning the ticker are collected from **r/stocks** and **r/investing**.
+4. VADER assigns a sentiment score to each post.
+5. Daily sentiment is compared with daily stock returns using the Pearson correlation coefficient.
+6. Results are displayed with an interactive Chart.js visualization.
 
-## Troubleshooting
+## Data Sources
 
-### Common Issues
+- Yahoo Finance (via `yfinance`)
+- Reddit API
+- VADER Sentiment Analyzer (NLTK)
 
-1. **"Stock ticker not found"**
-   - Ensure ticker is valid and traded on major exchanges
-   - Try common tickers like AAPL, MSFT, GOOGL
+## Project Structure
 
-2. **"Not enough social media data"**
-   - Stock may not be frequently discussed on Reddit
-   - Try more popular stocks with higher social media presence
+```
+app.py              Flask application
+templates/          HTML templates
+static/             CSS and JavaScript
+requirements.txt    Python dependencies
+```
 
-3. **Reddit API errors**
-   - Check your Reddit API credentials
-   - Ensure environment variables are set correctly
-   - Verify your Reddit app is configured as "script" type
+## Requirements
 
-4. **Service unavailable**
-   - Check internet connection
-   - APIs may be temporarily down
-   - Try again in a few minutes
+- Reddit API credentials
+- At least 20 Reddit posts mentioning the ticker
+- 30 days of historical stock data
+- Minimum of 5 overlapping days for correlation
 
-### Debug Mode
-The app runs in debug mode by default for development. For production deployment, set `debug=False` in `app.py`.
+## Current Limitations
 
-## License
+This is an MVP, so a few things are intentionally simple.
 
-This project is for educational and research purposes. Please respect API rate limits and terms of service for Reddit and Yahoo Finance.
+- Reddit is the only sentiment source.
+- Only one stock can be analyzed at a time.
+- Analysis is limited to a 30-day window.
+- Results are processed in memory (no database).
+- No user accounts or saved analyses.
+
+## Common Issues
+
+### Invalid ticker
+
+Make sure the ticker exists and is listed on Yahoo Finance.
+
+### Not enough Reddit data
+
+Some stocks simply don't have enough discussion to calculate a meaningful correlation.
+
+### Reddit API errors
+
+Verify your API credentials and make sure your Reddit application is configured as a **script** application.
+
+## Notes
+
+Typical analysis takes around **10–30 seconds**, depending on Reddit API response time and the amount of available data.
+
+This project was built as an exploration of whether online discussion and short-term market performance show measurable relationships. It is intended for educational purposes and should not be used as financial advice.
